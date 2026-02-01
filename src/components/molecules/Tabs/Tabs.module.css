@@ -1,0 +1,89 @@
+.tabs {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabList {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* Variants */
+.line {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.line .tab {
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.line .tab.active {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.enclosed {
+  background-color: var(--color-gray-100);
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
+}
+
+.enclosed .tab {
+  border-radius: var(--radius-md);
+}
+
+.enclosed .tab.active {
+  background-color: var(--color-background);
+  box-shadow: var(--shadow-sm);
+}
+
+.pills .tab {
+  border-radius: var(--radius-full);
+}
+
+.pills .tab.active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* Tab button */
+.tab {
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-all);
+}
+
+.tab:hover:not(.disabled):not(.active) {
+  color: var(--color-text-primary);
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Sizes */
+.sm .tab {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.md .tab {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-base);
+}
+
+.lg .tab {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--font-size-lg);
+}
+
+.panel {
+  padding-top: var(--space-4);
+}

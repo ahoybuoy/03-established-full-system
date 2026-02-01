@@ -1,0 +1,64 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.switchWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  background-color: var(--color-gray-300);
+  transition: var(--transition-all);
+}
+
+.thumb {
+  border-radius: var(--radius-full);
+  background-color: var(--color-background);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-transform);
+}
+
+/* Sizes */
+.sm .track { width: var(--space-8); height: var(--space-4); padding: 2px; }
+.sm .thumb { width: calc(var(--space-4) - 4px); height: calc(var(--space-4) - 4px); }
+
+.md .track { width: var(--space-10); height: var(--space-5); padding: 2px; }
+.md .thumb { width: calc(var(--space-5) - 4px); height: calc(var(--space-5) - 4px); }
+
+.lg .track { width: var(--space-12); height: var(--space-6); padding: 3px; }
+.lg .thumb { width: calc(var(--space-6) - 6px); height: calc(var(--space-6) - 6px); }
+
+/* Checked state */
+.input:checked + .track {
+  background-color: var(--color-primary);
+}
+
+.sm .input:checked + .track .thumb { transform: translateX(var(--space-4)); }
+.md .input:checked + .track .thumb { transform: translateX(var(--space-5)); }
+.lg .input:checked + .track .thumb { transform: translateX(var(--space-6)); }
+
+.input:focus-visible + .track {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}

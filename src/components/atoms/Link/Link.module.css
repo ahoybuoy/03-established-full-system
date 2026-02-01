@@ -1,0 +1,44 @@
+.link {
+  font-family: var(--font-family-sans);
+  text-decoration: none;
+  transition: var(--transition-colors);
+  cursor: pointer;
+}
+
+/* Variants */
+.default {
+  color: var(--color-text-link);
+}
+
+.default:hover {
+  color: var(--color-text-link-hover);
+  text-decoration: underline;
+}
+
+.subtle {
+  color: var(--color-text-secondary);
+}
+
+.subtle:hover {
+  color: var(--color-text-primary);
+}
+
+.nav {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.nav:hover {
+  color: var(--color-primary);
+}
+
+/* Sizes */
+.sm { font-size: var(--font-size-sm); }
+.md { font-size: var(--font-size-base); }
+.lg { font-size: var(--font-size-lg); }
+
+.link:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
