@@ -1,0 +1,55 @@
+diff --git a/src/components/organisms/Table/Table.module.css b/src/components/organisms/Table/Table.module.css
+index b1615e7..f06e046 100644
+--- a/src/components/organisms/Table/Table.module.css
++++ b/src/components/organisms/Table/Table.module.css
+@@ -56,3 +56,23 @@
+   text-align: center;
+   color: var(--color-text-secondary);
+ }
++
++/* Striped variant */
++.striped .tbody .tr:nth-child(even) {
++  background-color: var(--color-gray-50);
++}
++
++.striped .tbody .tr:hover {
++  background-color: var(--color-gray-100);
++}
++
++/* Compact variant */
++.compact .th {
++  padding: var(--space-2) var(--space-3);
++  font-size: var(--font-size-xs);
++}
++
++.compact .td {
++  padding: var(--space-2) var(--space-3);
++  font-size: var(--font-size-xs);
++}
+diff --git a/src/components/organisms/Table/Table.tsx b/src/components/organisms/Table/Table.tsx
+index f409bf4..64cef49 100644
+--- a/src/components/organisms/Table/Table.tsx
++++ b/src/components/organisms/Table/Table.tsx
+@@ -15,6 +15,7 @@ export interface TableProps<T> {
+   data: T[];
+   keyExtractor: (row: T) => string;
+   onRowClick?: (row: T) => void;
++  variant?: 'default' | 'striped' | 'compact';
+   loading?: boolean;
+   emptyMessage?: string;
+   className?: string;
+@@ -25,12 +26,13 @@ export function Table<T>({
+   data,
+   keyExtractor,
+   onRowClick,
++  variant = 'default',
+   loading = false,
+   emptyMessage = 'No data available',
+   className,
+ }: TableProps<T>) {
+   return (
+-    <div className={clsx(styles.wrapper, className)}>
++    <div className={clsx(styles.wrapper, styles[variant], className)}>
+       <table className={styles.table}>
+         <thead className={styles.thead}>
+           <tr>

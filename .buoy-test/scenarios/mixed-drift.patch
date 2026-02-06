@@ -1,0 +1,143 @@
+diff --git a/src/pages/settings/SettingsPage.module.css b/src/pages/settings/SettingsPage.module.css
+new file mode 100644
+index 0000000..cdfff84
+--- /dev/null
++++ b/src/pages/settings/SettingsPage.module.css
+@@ -0,0 +1,70 @@
++.layout {
++  display: flex;
++  gap: var(--space-8);
++  max-width: 64rem;
++  margin: 0 auto;
++  padding: 48px var(--space-6);
++}
++
++.sidebar {
++  width: 16rem;
++  flex-shrink: 0;
++  display: flex;
++  flex-direction: column;
++  gap: var(--space-1);
++}
++
++.navItem {
++  display: flex;
++  flex-direction: column;
++  align-items: flex-start;
++  padding: var(--space-3) var(--space-4);
++  border: none;
++  border-radius: var(--radius-lg);
++  cursor: pointer;
++  transition: var(--transition-colors);
++  text-align: left;
++  width: 100%;
++}
++
++.navLabel {
++  font-size: var(--font-size-sm);
++  font-weight: var(--font-weight-medium);
++}
++
++.navDesc {
++  font-size: var(--font-size-xs);
++  margin-top: 2px;
++}
++
++.content {
++  flex: 1;
++  min-width: 0;
++}
++
++.formGroup {
++  margin-bottom: 24px;
++}
++
++.label {
++  display: block;
++  font-size: var(--font-size-sm);
++  font-weight: var(--font-weight-medium);
++  color: var(--color-text-primary);
++  margin-bottom: var(--space-1);
++}
++
++.input {
++  width: 100%;
++  padding: var(--space-2) var(--space-3);
++  border: 1px solid #d1d5db;
++  border-radius: var(--radius-md);
++  font-size: var(--font-size-sm);
++}
++
++.actions {
++  display: flex;
++  justify-content: flex-end;
++  padding-top: var(--space-6);
++  border-top: 1px solid var(--color-border);
++}
+diff --git a/src/pages/settings/SettingsPage.tsx b/src/pages/settings/SettingsPage.tsx
+new file mode 100644
+index 0000000..dc14cc3
+--- /dev/null
++++ b/src/pages/settings/SettingsPage.tsx
+@@ -0,0 +1,61 @@
++import React, { useState } from 'react';
++import { Card, CardHeader, CardBody } from '../../components/molecules/Card';
++import { Button } from '../../components/atoms/Button';
++import styles from './SettingsPage.module.css';
++
++interface SettingsSection {
++  id: string;
++  label: string;
++  description: string;
++}
++
++const sections: SettingsSection[] = [
++  { id: 'profile', label: 'Profile', description: 'Manage your account details' },
++  { id: 'notifications', label: 'Notifications', description: 'Configure alert preferences' },
++  { id: 'security', label: 'Security', description: 'Password and two-factor auth' },
++];
++
++export const SettingsPage: React.FC = () => {
++  const [activeSection, setActiveSection] = useState('profile');
++
++  return (
++    <div className={styles.layout}>
++      <nav className={styles.sidebar}>
++        {sections.map((section) => (
++          <button
++            key={section.id}
++            className={styles.navItem}
++            onClick={() => setActiveSection(section.id)}
++            style={{
++              backgroundColor: activeSection === section.id ? '#eef2ff' : 'transparent',
++              color: activeSection === section.id ? '#4338ca' : '#6b7280',
++            }}
++          >
++            <span className={styles.navLabel}>{section.label}</span>
++            <span className={styles.navDesc}>{section.description}</span>
++          </button>
++        ))}
++      </nav>
++      <main className={styles.content}>
++        <Card>
++          <CardHeader>
++            <h2 style={{ fontSize: '20px', marginBottom: '4px' }}>
++              {sections.find((s) => s.id === activeSection)?.label}
++            </h2>
++          </CardHeader>
++          <CardBody>
++            <div className={styles.formGroup}>
++              <label className={styles.label}>Display name</label>
++              <input type="text" className={styles.input} placeholder="Enter your name" />
++            </div>
++            <div className={styles.actions}>
++              <Button variant="primary">Save changes</Button>
++            </div>
++          </CardBody>
++        </Card>
++      </main>
++    </div>
++  );
++};
++
++export default SettingsPage;

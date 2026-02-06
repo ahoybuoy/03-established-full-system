@@ -1,0 +1,247 @@
+name: Test Drift Scenarios
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Which scenario to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - color-drift
+          - spacing-drift
+          - mixed-drift
+          - clean-pr
+  schedule:
+    - cron: '0 6 * * 1-5'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.scenario || 'all' }}" = "all" ]; then
+            echo 'matrix={"scenario":["color-drift","spacing-drift","mixed-drift","clean-pr"]}' >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix={\"scenario\":[\"${{ github.event.inputs.scenario }}\"]}" >> "$GITHUB_OUTPUT"
+          fi
+
+  test-scenario:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    env:
+      SCENARIO: ${{ matrix.scenario }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Read scenario config
+        id: config
+        run: |
+          CONFIG=$(cat .buoy-test/config.json)
+          BRANCH=$(echo "$CONFIG" | jq -r ".scenarios[\"$SCENARIO\"].branch")
+          PR_TITLE=$(echo "$CONFIG" | jq -r ".scenarios[\"$SCENARIO\"].prTitle")
+          PATCH=$(echo "$CONFIG" | jq -r ".scenarios[\"$SCENARIO\"].patch")
+          EXPECTED_BEHAVIOR=$(echo "$CONFIG" | jq -r ".scenarios[\"$SCENARIO\"].expectedBehavior")
+          POLL_INTERVAL=$(echo "$CONFIG" | jq -r '.evaluator.pollIntervalSeconds')
+          MAX_POLL_MINUTES=$(echo "$CONFIG" | jq -r '.evaluator.maxPollMinutes')
+
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "pr_title=$PR_TITLE" >> "$GITHUB_OUTPUT"
+          echo "patch=.buoy-test/$PATCH" >> "$GITHUB_OUTPUT"
+          echo "expected_behavior=$EXPECTED_BEHAVIOR" >> "$GITHUB_OUTPUT"
+          echo "poll_interval=$POLL_INTERVAL" >> "$GITHUB_OUTPUT"
+          echo "max_poll_minutes=$MAX_POLL_MINUTES" >> "$GITHUB_OUTPUT"
+
+      - name: Delete existing branch (if any)
+        run: |
+          git push origin --delete "${{ steps.config.outputs.branch }}" 2>/dev/null || true
+
+      - name: Create drift branch and apply patch
+        run: |
+          git checkout -b "${{ steps.config.outputs.branch }}"
+          git apply "${{ steps.config.outputs.patch }}"
+          git add -A
+          git commit -m "${{ steps.config.outputs.pr_title }}"
+          git push -u origin "${{ steps.config.outputs.branch }}"
+
+      - name: Open PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "${{ steps.config.outputs.branch }}" \
+            --title "${{ steps.config.outputs.pr_title }}" \
+            --body "Automated test scenario: \`$SCENARIO\`
+
+          This PR was created by the test-drift workflow to evaluate Buoy's design drift detection.
+
+          **Expected behavior:** ${{ steps.config.outputs.expected_behavior }}")
+
+          PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "Opened PR #$PR_NUMBER: $PR_URL"
+
+      - name: Poll for Buoy comment
+        id: poll
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MAX_ATTEMPTS=$(( ${{ steps.config.outputs.max_poll_minutes }} * 60 / ${{ steps.config.outputs.poll_interval }} ))
+          ATTEMPT=0
+          COMMENT_FOUND=false
+          COMMENT_FILE="buoy-comment.md"
+
+          echo "Polling for Buoy comment on PR #${{ steps.pr.outputs.number }} (max $MAX_ATTEMPTS attempts, every ${{ steps.config.outputs.poll_interval }}s)..."
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+
+            # Get all PR comments
+            COMMENTS=$(gh api "repos/${{ github.repository }}/issues/${{ steps.pr.outputs.number }}/comments" --jq '.[].body')
+
+            # Check for the Buoy marker (excluding scanning message)
+            while IFS= read -r -d '' COMMENT; do
+              if echo "$COMMENT" | grep -q '<!-- buoy-design-drift-report -->' && \
+                 ! echo "$COMMENT" | grep -q 'scanning for design drift'; then
+                echo "$COMMENT" > "$COMMENT_FILE"
+                COMMENT_FOUND=true
+                echo "Found Buoy comment!"
+                break
+              fi
+            done < <(gh api "repos/${{ github.repository }}/issues/${{ steps.pr.outputs.number }}/comments" \
+              --jq '.[] | .body + "\u0000"')
+
+            if [ "$COMMENT_FOUND" = true ]; then
+              break
+            fi
+
+            sleep ${{ steps.config.outputs.poll_interval }}
+          done
+
+          if [ "$COMMENT_FOUND" = true ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "comment_file=$COMMENT_FILE" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            # For clean-pr, no comment is acceptable
+            if [ "${{ steps.config.outputs.expected_behavior }}" = "silent-or-all-clear" ]; then
+              echo "No comment found — acceptable for clean-pr scenario"
+              echo "<!-- buoy-design-drift-report -->" > "$COMMENT_FILE"
+              echo "comment_file=$COMMENT_FILE" >> "$GITHUB_OUTPUT"
+            else
+              echo "::warning::No Buoy comment found after ${{ steps.config.outputs.max_poll_minutes }} minutes"
+              echo "No Buoy comment found" > "$COMMENT_FILE"
+              echo "comment_file=$COMMENT_FILE" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Generate diff
+        run: |
+          git diff main...${{ steps.config.outputs.branch }} > pr-diff.patch
+
+      - name: Checkout test harness
+        uses: actions/checkout@v4
+        with:
+          repository: ahoybuoy/buoy-test-harness
+          path: harness
+
+      - name: Run evaluator
+        id: evaluate
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          node harness/evaluator/index.mjs \
+            --comment "${{ steps.poll.outputs.comment_file }}" \
+            --diff pr-diff.patch \
+            --scenario "$SCENARIO" \
+            --config .buoy-test/config.json \
+            --repo-root . \
+            --output eval-result.json
+
+          echo "Evaluation complete"
+
+      - name: Post eval comment on PR
+        if: steps.pr.outputs.number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Build summary from eval results
+          HEURISTIC_PASSED=$(jq '.heuristics.passed' eval-result.json)
+          HEURISTIC_TOTAL=$(jq '.heuristics.total' eval-result.json)
+          HEURISTIC_SCORE=$(jq '.overall.heuristicScore' eval-result.json)
+          LLM_SCORE=$(jq '.overall.llmScore // "N/A"' eval-result.json)
+
+          # Build check table
+          CHECKS_TABLE="| Check | Result |\n|-------|--------|\n"
+          CHECKS_TABLE+=$(jq -r '.heuristics.checks[] | "| \(.name) | \(if .pass then "✅" else "❌" end) \(.detail) |"' eval-result.json)
+
+          # Build LLM scores table if available
+          LLM_TABLE=""
+          if [ "$(jq '.llmJudge' eval-result.json)" != "null" ]; then
+            LLM_TABLE="\n\n### LLM Judge Scores\n\n| Dimension | Score | Reasoning |\n|-----------|-------|-----------|\n"
+            LLM_TABLE+=$(jq -r '.llmJudge.scores[] | "| \(.dimension) | \(.score)/5 | \(.reasoning) |"' eval-result.json)
+            OVERALL=$(jq -r '.llmJudge.overall_assessment' eval-result.json)
+            LLM_TABLE+="\n\n**Overall:** $OVERALL"
+          fi
+
+          BODY=$(cat <<EVALEOF
+          ## 🧪 Test Harness Evaluation — \`$SCENARIO\`
+
+          **Heuristic Score:** $HEURISTIC_SCORE% ($HEURISTIC_PASSED/$HEURISTIC_TOTAL checks passed)
+          **LLM Judge Score:** $LLM_SCORE
+
+          ### Heuristic Checks
+
+          $(echo -e "$CHECKS_TABLE")
+          $( [ -n "$LLM_TABLE" ] && echo -e "$LLM_TABLE" )
+
+          ---
+          *Generated by [test-drift workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+          EVALEOF
+          )
+
+          gh pr comment "${{ steps.pr.outputs.number }}" --body "$BODY"
+
+      - name: Close PR and delete branch
+        if: always() && steps.pr.outputs.number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr close "${{ steps.pr.outputs.number }}" --delete-branch || true
+
+      - name: Upload evaluation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ matrix.scenario }}
+          path: |
+            eval-result.json
+            buoy-comment.md
+            pr-diff.patch
+          retention-days: 30

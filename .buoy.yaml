@@ -1,0 +1,27 @@
+frameworks:
+  - nextjs
+  - css-modules
+
+tokens:
+  paths:
+    - src/styles/tokens.css
+    - src/styles/globals.css
+
+components:
+  paths:
+    - src/components/**/*.tsx
+
+ignore:
+  - "node_modules/**"
+  - ".next/**"
+  - "**/*.test.*"
+  - "**/*.stories.*"
+
+reviews:
+  auto_review: true
+  request_changes: false
+  draft_prs: false
+
+thresholds:
+  min_drift_to_comment: 1
+  fail_check_on: error

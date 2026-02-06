@@ -1,0 +1,88 @@
+diff --git a/src/components/molecules/FeatureCard/FeatureCard.module.css b/src/components/molecules/FeatureCard/FeatureCard.module.css
+new file mode 100644
+index 0000000..3872bda
+--- /dev/null
++++ b/src/components/molecules/FeatureCard/FeatureCard.module.css
+@@ -0,0 +1,40 @@
++.card {
++  padding: var(--space-6);
++  border-radius: var(--radius-xl);
++  border: 1px solid var(--color-border);
++  background-color: var(--color-background);
++  transition: var(--transition-all);
++}
++
++.card:hover {
++  box-shadow: var(--shadow-md);
++}
++
++.highlighted {
++  background-color: #f0f4ff;
++  border-color: #e2e8f0;
++}
++
++.iconWrapper {
++  width: var(--space-10);
++  height: var(--space-10);
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  border-radius: var(--radius-lg);
++  background-color: var(--color-primary-50);
++  margin-bottom: var(--space-4);
++}
++
++.title {
++  font-size: var(--font-size-lg);
++  font-weight: var(--font-weight-semibold);
++  color: #1a202c;
++  margin-bottom: var(--space-2);
++}
++
++.description {
++  font-size: var(--font-size-sm);
++  color: var(--color-text-secondary);
++  line-height: var(--line-height-relaxed);
++}
+diff --git a/src/components/molecules/FeatureCard/FeatureCard.tsx b/src/components/molecules/FeatureCard/FeatureCard.tsx
+new file mode 100644
+index 0000000..eeb0042
+--- /dev/null
++++ b/src/components/molecules/FeatureCard/FeatureCard.tsx
+@@ -0,0 +1,29 @@
++import React from 'react';
++import clsx from 'clsx';
++import styles from './FeatureCard.module.css';
++
++export interface FeatureCardProps {
++  icon: React.ReactNode;
++  title: string;
++  description: string;
++  highlighted?: boolean;
++  className?: string;
++}
++
++export const FeatureCard: React.FC<FeatureCardProps> = ({
++  icon,
++  title,
++  description,
++  highlighted = false,
++  className,
++}) => {
++  return (
++    <div className={clsx(styles.card, highlighted && styles.highlighted, className)}>
++      <div className={styles.iconWrapper}>{icon}</div>
++      <h3 className={styles.title}>{title}</h3>
++      <p className={styles.description}>{description}</p>
++    </div>
++  );
++};
++
++export default FeatureCard;
+diff --git a/src/components/molecules/FeatureCard/index.ts b/src/components/molecules/FeatureCard/index.ts
+new file mode 100644
+index 0000000..cdc9476
+--- /dev/null
++++ b/src/components/molecules/FeatureCard/index.ts
+@@ -0,0 +1 @@
++export { FeatureCard, type FeatureCardProps } from './FeatureCard';
