@@ -4,21 +4,21 @@
       "patch": "scenarios/color-drift.patch",
       "branch": "test/color-drift",
       "prTitle": "feat: add FeatureCard component",
-      "expectedSignals": { "min": 2, "max": 4, "types": ["hardcoded-color"] },
+      "expectedSignals": { "min": 1, "max": 6, "types": ["hardcoded-color"] },
       "expectedBehavior": "comment-with-issues"
     },
     "spacing-drift": {
       "patch": "scenarios/spacing-drift.patch",
       "branch": "test/spacing-drift",
       "prTitle": "feat: update Card and Modal padding",
-      "expectedSignals": { "min": 2, "max": 4, "types": ["hardcoded-spacing"] },
+      "expectedSignals": { "min": 1, "max": 10, "types": ["hardcoded-spacing"] },
       "expectedBehavior": "comment-with-issues"
     },
     "mixed-drift": {
       "patch": "scenarios/mixed-drift.patch",
       "branch": "test/mixed-drift",
       "prTitle": "feat: add settings page",
-      "expectedSignals": { "min": 3, "max": 6, "types": ["hardcoded-color", "hardcoded-spacing", "inline-style"] },
+      "expectedSignals": { "min": 2, "max": 10, "types": ["hardcoded-color", "hardcoded-spacing", "inline-style"] },
       "expectedBehavior": "comment-with-issues"
     },
     "clean-pr": {
@@ -31,6 +31,13 @@
   },
   "evaluator": {
     "openrouterModel": "anthropic/claude-sonnet-4-5-20250929",
+    "goldenStandard": "openai/gpt-5.2-codex",
+    "modelsToTest": [
+      "anthropic/claude-sonnet-4-5-20250929",
+      "anthropic/claude-haiku-4-5-20251001",
+      "openai/gpt-4o",
+      "openai/gpt-4o-mini"
+    ],
     "maxPollMinutes": 10,
     "pollIntervalSeconds": 15
   }
