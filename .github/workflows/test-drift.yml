@@ -245,3 +245,60 @@ jobs:
             buoy-comment.md
             pr-diff.patch
           retention-days: 30
+
+  push-results:
+    needs: test-scenario
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Checkout test harness
+        uses: actions/checkout@v4
+        with:
+          repository: ahoybuoy/buoy-test-harness
+          token: ${{ secrets.HARNESS_PAT }}
+          path: harness
+
+      - name: Download all eval artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Organize results by date
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          RESULTS_DIR="harness/results/$DATE"
+          mkdir -p "$RESULTS_DIR"
+
+          for DIR in artifacts/eval-*/; do
+            SCENARIO=$(basename "$DIR" | sed 's/^eval-//')
+            cp "$DIR/eval-result.json" "$RESULTS_DIR/eval-$SCENARIO.json" 2>/dev/null || true
+            cp "$DIR/buoy-comment.md" "$RESULTS_DIR/comment-$SCENARIO.md" 2>/dev/null || true
+          done
+
+          echo "Results organized in $RESULTS_DIR"
+          ls -la "$RESULTS_DIR"
+
+      - name: Generate daily summary
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          node harness/evaluator/summary-generator.mjs \
+            --results-dir harness/results \
+            --date "$DATE"
+
+      - name: Commit and push results
+        run: |
+          cd harness
+          git config user.name "buoy-test-bot"
+          git config user.email "test-bot@buoy.design"
+
+          DATE=$(date -u +%Y-%m-%d)
+          git add "results/$DATE/"
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+
+          git commit -m "results: $DATE — ${{ github.repository }}"
+          git push
