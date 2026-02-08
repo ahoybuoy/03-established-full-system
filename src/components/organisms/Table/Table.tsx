@@ -15,6 +15,7 @@ export interface TableProps<T> {
   data: T[];
   keyExtractor: (row: T) => string;
   onRowClick?: (row: T) => void;
+  variant?: 'default' | 'striped' | 'compact';
   loading?: boolean;
   emptyMessage?: string;
   className?: string;
@@ -25,12 +26,13 @@ export function Table<T>({
   data,
   keyExtractor,
   onRowClick,
+  variant = 'default',
   loading = false,
   emptyMessage = 'No data available',
   className,
 }: TableProps<T>) {
   return (
-    <div className={clsx(styles.wrapper, className)}>
+    <div className={clsx(styles.wrapper, styles[variant], className)}>
       <table className={styles.table}>
         <thead className={styles.thead}>
           <tr>
