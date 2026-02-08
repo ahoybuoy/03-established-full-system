@@ -1,3 +1,6 @@
+project:
+  name: 03-established-full-system
+
 frameworks:
   - nextjs
   - css-modules
