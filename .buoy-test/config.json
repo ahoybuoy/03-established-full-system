@@ -30,11 +30,11 @@
     }
   },
   "evaluator": {
-    "openrouterModel": "anthropic/claude-sonnet-4-5-20250929",
+    "openrouterModel": "anthropic/claude-sonnet-4.5",
     "goldenStandard": "openai/gpt-5.2-codex",
     "modelsToTest": [
-      "anthropic/claude-sonnet-4-5-20250929",
-      "anthropic/claude-haiku-4-5-20251001",
+      "anthropic/claude-sonnet-4.5",
+      "anthropic/claude-haiku-4.5",
       "openai/gpt-4o",
       "openai/gpt-4o-mini"
     ],
