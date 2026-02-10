@@ -14,6 +14,13 @@
 
 .elevated {
   box-shadow: var(--shadow-md);
+  background-color: #eff6ff;
+  border-color: #2563eb;
+}
+
+.highlighted {
+  background-color: #1e3a8a;
+  color: #f9fafb;
 }
 
 /* Padding */
