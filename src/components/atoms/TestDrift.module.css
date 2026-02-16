@@ -1,0 +1,11 @@
+.test-drift {
+  background-color: #dc2626;
+  padding: 24px;
+  border-radius: 8px;
+  color: #1e293b;
+  margin-bottom: 16px;
+  font-size: 14px;
+  opacity: 0.75;
+  z-index: 100;
+}
+// Retrigger: bug fixes deployed
