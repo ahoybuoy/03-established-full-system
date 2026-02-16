@@ -18,7 +18,10 @@ export const Badge: React.FC<BadgeProps> = ({
   children,
 }) => {
   return (
-    <span className={clsx(styles.badge, styles[variant], styles[size], className)}>
+    <span
+      className={clsx(styles.badge, styles[variant], styles[size], className)}
+      style={{ borderColor: '#2563eb', backgroundColor: '#eff6ff' }}
+    >
       {dot && <span className={styles.dot} />}
       {children}
     </span>

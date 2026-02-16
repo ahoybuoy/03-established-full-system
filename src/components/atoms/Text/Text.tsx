@@ -34,6 +34,7 @@ export const Text: React.FC<TextProps> = ({
         truncate && styles.truncate,
         className
       )}
+      style={{ color: '#ef4444' }}
     >
       {children}
     </Component>
